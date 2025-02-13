@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "bootstrap": "^5.3.3",
+    "jquery": "^3.7.1"
+  },
+  "devDependencies": {
+    "cpy-cli": "^3.1.1"
+  },
+  "scripts": {
+    "build": "cpy node_modules/bootstrap/dist/css/bootstrap.min.css app/static/css/ && cpy node_modules/bootstrap/dist/js/bootstrap.bundle.min.js app/static/js/ && cpy node_modules/jquery/dist/jquery.min.js app/static/js/"
+  }
+}
+
