@@ -4,9 +4,124 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Market Overview | Stock Trading System</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script> 
 </head>
 <body>
-    <h1>Market Overview</h1>
-    <p>Stock data will be displayed here...</p>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('routes.home') }}">Stock Trading System</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.login') }}">Login</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.register') }}">Register</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.portfolio') }}">Portfolio</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('routes.market') }}">Market</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Market Overview Section -->
+    <section class="container my-5">
+        <h2 class="text-center mb-4">Stock Market Overview</h2>
+
+        <!-- Stock Table -->
+        <div class="table-responsive">
+            <table class="table table-striped table-hover text-center">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Company</th>
+                        <th>Ticker</th>
+                        <th>Price</th>
+                        <th>Change</th>
+                        <th>Volume</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="stock-table">
+                    <!-- Placeholder Data (Replace with Live Data Later) -->
+                    <tr>
+                        <td>Apple Inc.</td>
+                        <td>AAPL</td>
+                        <td>$175.42</td>
+                        <td class="text-success">+1.45%</td>
+                        <td>12M</td>
+                        <td><a href="#" class="btn btn-primary btn-sm">View</a></td>
+                    </tr>
+                    <tr>
+                        <td>Microsoft Corp.</td>
+                        <td>MSFT</td>
+                        <td>$318.25</td>
+                        <td class="text-danger">-0.72%</td>
+                        <td>8M</td>
+                        <td><a href="#" class="btn btn-primary btn-sm">View</a></td>
+                    </tr>
+                    <tr>
+                        <td>Amazon.com</td>
+                        <td>AMZN</td>
+                        <td>$130.78</td>
+                        <td class="text-success">+2.31%</td>
+                        <td>6M</td>
+                        <td><a href="#" class="btn btn-primary btn-sm">View</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Stock Graph Placeholder -->
+    <section class="container my-5">
+        <h2 class="text-center">Stock Price Trends</h2>
+        <canvas id="stockChart"></canvas>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-3">
+        <p>&copy; 2025 Stock Trading System. All Rights Reserved.</p>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+
+    <!-- Placeholder Chart.js for Graph (Future Implementation) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let ctx = document.getElementById('stockChart').getContext('2d');
+            let stockChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ["10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM"],
+                    datasets: [{
+                        label: "AAPL",
+                        data: [174, 175, 176, 177, 176],
+                        borderColor: "blue",
+                        fill: false
+                    }, {
+                        label: "MSFT",
+                        data: [320, 318, 319, 317, 318],
+                        borderColor: "green",
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        });
+    </script>
+
 </body>
 </html>
+

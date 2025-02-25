@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/styles.css') }}">  may implement custom css later-->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
     <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script> 
@@ -11,23 +11,55 @@
     <title>Stock Trading System</title>
 </head>
 <body>
-    
+    <!-- accessing variables that are passed in from the backend can be done as followed cbcb variable name that your passing in cbcb anywhere on the page. Will do this when db referencing on -->
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('home') }}">Stock Trading System</a>
+            <a class="navbar-brand" href="{{ url_for('routes.home') }}">Stock Trading System</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Login</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('register') }}">Register</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('portfolio') }}">Portfolio</a></li>
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Welcome, {{ current_user.username }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('routes.logout') }}">Logout</a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.login') }}">Login</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.register') }}">Register</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.portfolio') }}">Portfolio</a></li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            {% if category == 'error' %}
+                <div class="alert alert-danger alert-dismissable fade show" role="alert"> 
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% else %}    
+                <div class="alert alert-success alert-dismissable fade show" role="alert"> 
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
 
     <!-- Hero Section -->
     <header class="hero bg-primary text-white text-center py-5">
@@ -36,7 +68,7 @@
                 <div class="col-md-8">
                     <h1 class="display-4">Welcome to the Stock Trading System</h1>
                     <p class="lead">Buy, sell, and manage your stocks with ease.</p>
-                    <a href="{{ url_for('register') }}" class="btn btn-light btn-lg">Get Started</a>
+                    <a href="{{ url_for('routes.register') }}" class="btn btn-light btn-lg">Get Started</a>
                 </div>
             </div>
         </div>
@@ -79,7 +111,7 @@
             <div class="col-md-6">
                 <h2>Ready to trade?</h2>
                 <p class="lead">Sign up now to start buying and selling stocks.</p>
-                <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Create an Account</a>
+                <a href="{{ url_for('routes.register') }}" class="btn btn-primary btn-lg">Create an Account</a>
             </div>
         </div>
     </section>
