@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Details</title>
+    
+    <!-- Bootstrap & Chart.js -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('routes.home') }}">Stock Trading System</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <span class="nav-link">Welcome, {{ current_user.username }}</span>
+                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.portfolio') }}">Portfolio</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.market') }}">Market</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.settings') }}">Settings</a></li>
+                
+                        {% if current_user.isAdministrator %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.admin') }}">Admin Panel</a></li>
+                        {% endif %}
+                
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('routes.logout') }}">Logout</a>
+                        </li>
+                    
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.login') }}">Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.register') }}">Register</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Stock Details -->
+    <div class="container mt-5">
+        <h2 id="stock-title"></h2>
+        <p><strong>Company:</strong> <span id="company-name"></span></p>
+        <p><strong>Current Price:</strong> $<span id="current-price"></span></p>
+        <p><strong>Market Cap:</strong> $<span id="market-cap"></span></p>
+
+        <!-- Chart -->
+        <canvas id="stockChart"></canvas>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const stockTicker = window.location.pathname.split("/").pop();
+
+            fetch(`/stock/${stockTicker}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("stock-title").textContent = data.ticker;
+                    document.getElementById("company-name").textContent = data.company_name;
+                    document.getElementById("current-price").textContent = data.current_price.toFixed(2);
+                    document.getElementById("market-cap").textContent = data.market_cap.toLocaleString();
+
+                    // Parse price history
+                    let labels = data.history.map(entry => entry.time);
+                    let prices = data.history.map(entry => entry.price);
+
+                    // Create Chart.js Line Graph
+                    new Chart(document.getElementById("stockChart"), {
+                        type: "line",
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: "Stock Price ($)",
+                                data: prices,
+                                borderColor: "rgb(75, 192, 192)",
+                                fill: false
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                x: { title: { display: true, text: "Time" } },
+                                y: { title: { display: true, text: "Price ($)" } }
+                            }
+                        }
+                    });
+                });
+        });
+    </script>
+
+</body>
+</html>

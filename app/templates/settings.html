@@ -4,9 +4,138 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings | Stock Trading System</title>
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script> 
 </head>
 <body>
-    <h1>Settings</h1>
-    <p>Account and app settings will go here.</p>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('routes.home') }}">Stock Trading System</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <span class="nav-link">Welcome, {{ current_user.username }}</span>
+                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.portfolio') }}">Portfolio</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.market') }}">Market</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.settings') }}">Settings</a></li>
+                
+                        {% if current_user.isAdministrator %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.admin') }}">Admin Panel</a></li>
+                        {% endif %}
+                
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('routes.logout') }}">Logout</a>
+                        </li>
+                    
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.login') }}">Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.register') }}">Register</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Settings Section -->
+    <section class="container mt-5">
+        <h2 class="text-center">User Settings</h2>
+
+        <!-- User Information Form -->
+        <form id="userSettingsForm" class="mt-4">
+            <div class="mb-3">
+                <label for="first_name" class="form-label">First Name</label>
+                <input type="text" class="form-control" id="first_name">
+            </div>
+            <div class="mb-3">
+                <label for="last_name" class="form-label">Last Name</label>
+                <input type="text" class="form-control" id="last_name">
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email">
+            </div>
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username">
+            </div>
+            <div class="mb-3">
+                <label for="country" class="form-label">Country</label>
+                <input type="text" class="form-control" id="country">
+            </div>
+            <div class="mb-3">
+                <label for="currency" class="form-label">Currency</label>
+                <input type="text" class="form-control" id="currency">
+            </div>
+
+            <button type="button" class="btn btn-primary w-100" onclick="updateUser()">Save Changes</button>
+        </form>
+
+        <!-- Delete Account Button -->
+        <button class="btn btn-danger w-100 mt-3" onclick="deleteAccount()">Delete Account</button>
+    </section>
+
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            fetchUserData();
+        });
+
+        function fetchUserData() {
+            fetch("/api/user")
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("first_name").value = data.first_name;
+                    document.getElementById("last_name").value = data.last_name;
+                    document.getElementById("email").value = data.email;
+                    document.getElementById("username").value = data.username;
+                    document.getElementById("country").value = data.country;
+                    document.getElementById("currency").value = data.currency;
+                })
+                .catch(error => console.error("Error fetching user data:", error));
+        }
+
+        function updateUser() {
+            const userData = {
+                first_name: document.getElementById("first_name").value,
+                last_name: document.getElementById("last_name").value,
+                email: document.getElementById("email").value,
+                username: document.getElementById("username").value,
+                country: document.getElementById("country").value,
+                currency: document.getElementById("currency").value
+            };
+
+            fetch("/api/user/update", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(userData)
+            })
+            .then(response => response.json())
+            .then(data => alert(data.message))
+            .catch(error => console.error("Error updating user:", error));
+        }
+
+        function deleteAccount() {
+            if (confirm("Are you sure you want to delete your account?")) {
+                fetch("/api/user/delete", { method: "DELETE" })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    window.location.href = "/login"; 
+                })
+                .catch(error => console.error("Error deleting account:", error));
+            }
+        }
+    </script>
+
 </body>
 </html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | Stock Trading System</title>
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script> 
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('routes.home') }}">Stock Trading System</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.market') }}">Market</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.portfolio') }}">Portfolio</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{{ url_for('routes.admin') }}">Admin Panel</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Admin Panel -->
+    <section class="container my-5">
+        <h2 class="text-center">Admin Panel - Add New Stock</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="card shadow p-4">
+            <form action="{{ url_for('routes.admin') }}" method="POST">
+                <div class="mb-3">
+                    <label for="ticker" class="form-label">Stock Ticker</label>
+                    <input type="text" class="form-control" id="ticker" name="ticker" required>
+                </div>
+                <div class="mb-3">
+                    <label for="company_name" class="form-label">Company Name</label>
+                    <input type="text" class="form-control" id="company_name" name="company_name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="volume" class="form-label">Total Shares Available</label>
+                    <input type="number" class="form-control" id="volume" name="volume" required min="1">
+                </div>
+                <div class="mb-3">
+                    <label for="initial_price" class="form-label">Initial Stock Price ($)</label>
+                    <input type="number" class="form-control" id="initial_price" name="initial_price" required min="0.01" step="0.01">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Add Stock</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Bootstrap JS -->
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+
+</body>
+</html>

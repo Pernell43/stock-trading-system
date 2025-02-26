@@ -1,6 +1,7 @@
 # Import necessary modules
 from . import db, bcrypt  # Import database and bcrypt from __init__.py
 from flask_login import UserMixin
+from datetime import datetime
 
 
 class User(db.Model, UserMixin):
@@ -48,4 +49,21 @@ class User(db.Model, UserMixin):
         return f"<User {self.username} ({self.email})>"
 
 
-#Create more models as necessary below
+class Stock(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ticker = db.Column(db.String(10), unique=True, nullable=False)
+    company_name = db.Column(db.String(100), nullable=False)
+    volume = db.Column(db.Integer, nullable=False)
+    initial_price = db.Column(db.Float, nullable=False)
+    current_price = db.Column(db.Float, nullable=False)
+    market_cap = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow) # Will change in a second
+
+    # Relationship to StockPrice
+    price_history = db.relationship("StockPrice", backref="stock", lazy=True)
+
+class StockPrice(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    stock_id = db.Column(db.Integer, db.ForeignKey("stock.id"), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow) # Will change in a second
+    price = db.Column(db.Float, nullable=False)
