@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Details</title>
+    
+    <!-- Bootstrap & Chart.js -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+    <body>
+
+        <!-- Navigation Bar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="{{ url_for('routes.home') }}">Stock Trading System</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        {% if current_user.is_authenticated %}
+                            <li class="nav-item">
+                                <span class="nav-link">Welcome, {{ current_user.username }}</span>
+                            </li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.portfolio') }}">Portfolio</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.market') }}">Market</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.settings') }}">Settings</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.dashboard') }}">Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.wallet') }}">Wallet</a></li>
+
+                    
+                            {% if current_user.isAdministrator %}
+                                <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.admin') }}">Admin Panel</a></li>
+                            {% endif %}
+                    
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('routes.logout') }}">Logout</a>
+                            </li>
+                        
+                        {% else %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.login') }}">Login</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.register') }}">Register</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <h2>Welcome, {{ user.username }}</h2>
+            <p><strong>Cash Balance:</strong> ${{ "%.2f"|format(user.cash_balance) }}</p>
+
+            <h3>Your Portfolio</h3>
+            <table class="table">
+                <thead><tr><th>Ticker</th><th>Shares</th></tr></thead>
+                <tbody>
+                    {% for item in portfolio %}
+                    <tr>
+                        <td>{{ item.stock.ticker }}</td>
+                        <td>{{ item.shares }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        <h3>Recent Transactions</h3>
+        <table class="table">
+            <thead><tr><th>Stock</th><th>Type</th><th>Volume</th><th>Price</th><th>Date</th></tr></thead>
+            <tbody>
+                {% for tx in transactions %}
+                <tr>
+                    <td>{{ tx.stock.ticker }}</td>
+                    <td>{{ "Bought" if tx.buyer_id == user.id else "Sold" }}</td>
+                    <td>{{ tx.volume }}</td>
+                    <td>${{ tx.price }}</td>
+                    <td>{{ tx.timestamp.strftime("%Y-%m-%d %H:%M") }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <h3>Pending Orders</h3>
+        <table class="table">
+            <thead>
+                <tr><th>Ticker</th><th>Type</th><th>Volume</th><th>Target Price</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for order in user.pending_orders if order.is_active %}
+                <tr>
+                    <td>{{ order.stock.ticker }}</td>
+                    <td>{{ order.order_type }}</td>
+                    <td>{{ order.volume }}</td>
+                    <td>${{ "%.2f"|format(order.target_price) }}</td>
+                    <td>
+                        <form action="{{ url_for('routes.cancel_order', order_id=order.id) }}" method="POST">
+                            <button class="btn btn-danger btn-sm">Cancel</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <footer class="bg-dark text-white text-center py-3">
+            <p>&copy; 2025 Stock Trading System. All Rights Reserved.</p>
+        </footer>
+    
+        <!-- Bootstrap JS and Custom Scripts -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/scripts.js') }}"></script> 
+    </body>
+</html>

@@ -1,7 +1,24 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
+from flask import Blueprint, abort, render_template, request, flash, redirect, url_for, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
-from app.models import User, Stock, StockPrice  # Import models example
+from app.models import User, Stock, StockPrice, Transaction, Portfolio, MarketConfig, PendingOrder  # Import models example
 from app import db, bcrypt
+from datetime import datetime
+
+
+def is_market_open():
+    now = datetime.now()
+    today = now.weekday()  # 0 = Monday, 6 = Sunday
+    current_time = now.time()
+
+    config = MarketConfig.query.first()
+    if not config:
+        return True  # Allow trading if no config yet (fail-safe for dev)
+
+    # If weekend and market is restricted to weekdays only
+    if config.weekdays_only and today >= 5:
+        return False
+
+    return config.open_time <= current_time <= config.close_time
 
 routes = Blueprint("routes", __name__)
 
@@ -238,3 +255,192 @@ def stock_details(ticker):
         "market_cap": stock.market_cap,
         "history": price_data
     })
+
+
+@routes.route("/dashboard")
+@login_required
+def dashboard():
+    user = current_user
+    portfolio = Portfolio.query.filter_by(user_id=user.id).all()
+    transactions = Transaction.query.filter(
+        (Transaction.buyer_id == user.id) | (Transaction.seller_id == user.id)
+    ).order_by(Transaction.timestamp.desc()).all()
+    return render_template("dashboard.html", user=user, portfolio=portfolio, transactions=transactions)
+
+@routes.route("/trade/buy/<string:ticker>", methods=["GET", "POST"])
+@login_required
+def trade_buy(ticker):
+    stock = Stock.query.filter_by(ticker=ticker).first_or_404()
+
+    if request.method == "POST":
+        volume = int(request.form.get("volume"))
+        limit_price_raw = request.form.get("limit_price")
+        limit_price = float(limit_price_raw) if limit_price_raw else None
+
+        if limit_price:  # 🧠 It's a LIMIT ORDER
+            order = PendingOrder(
+                user_id=current_user.id,
+                stock_id=stock.id,
+                order_type="buy",
+                volume=volume,
+                target_price=limit_price
+            )
+            db.session.add(order)
+            db.session.commit()
+            flash(f"Limit buy order placed for {volume} shares of {ticker} at ${limit_price:.2f}", "success")
+            return redirect(url_for("routes.dashboard"))
+        else:  # 💥 It's a MARKET ORDER
+            total_price = stock.current_price * volume
+
+            if current_user.cash_balance < total_price:
+                flash("Insufficient funds for this purchase.", "error")
+                return redirect(request.url)
+
+            current_user.cash_balance -= total_price
+
+            portfolio_item = Portfolio.query.filter_by(user_id=current_user.id, stock_id=stock.id).first()
+            if portfolio_item:
+                portfolio_item.shares += volume
+            else:
+                db.session.add(Portfolio(user_id=current_user.id, stock_id=stock.id, shares=volume))
+
+            db.session.add(Transaction(
+                buyer_id=current_user.id,
+                seller_id=None,
+                stock_id=stock.id,
+                price=stock.current_price,
+                volume=volume,
+                status="Success"
+            ))
+            db.session.commit()
+
+            flash(f"Market purchase of {volume} shares of {ticker} complete!", "success")
+            return redirect(url_for("routes.dashboard"))
+
+    return render_template("trade.html", stock=stock)
+
+@routes.route("/trade/confirm/<string:ticker>/<int:volume>")
+@login_required
+def trade_confirm(ticker, volume):
+    stock = Stock.query.filter_by(ticker=ticker).first_or_404()
+    return render_template("trade_confirm.html", stock=stock, volume=volume)
+
+@routes.route("/trade/sell/<string:ticker>", methods=["GET", "POST"])
+@login_required
+def trade_sell(ticker):
+    stock = Stock.query.filter_by(ticker=ticker).first_or_404()
+    portfolio_item = Portfolio.query.filter_by(user_id=current_user.id, stock_id=stock.id).first()
+
+    if not portfolio_item or portfolio_item.shares == 0:
+        flash("You don't own any shares of this stock.", "error")
+        return redirect(url_for("routes.market"))
+
+    if request.method == "POST":
+        volume = int(request.form.get("volume"))
+        limit_price_raw = request.form.get("limit_price")
+        limit_price = float(limit_price_raw) if limit_price_raw else None
+
+        if volume > portfolio_item.shares:
+            flash("Not enough shares to sell.", "error")
+            return redirect(request.url)
+
+        if limit_price:  # 🧠 LIMIT SELL ORDER
+            order = PendingOrder(
+                user_id=current_user.id,
+                stock_id=stock.id,
+                order_type="sell",
+                volume=volume,
+                target_price=limit_price
+            )
+            db.session.add(order)
+            db.session.commit()
+            flash(f"Limit sell order placed for {volume} shares of {ticker} at ${limit_price:.2f}", "success")
+            return redirect(url_for("routes.dashboard"))
+
+        else:  # 💥 MARKET SELL ORDER
+            sale_total = stock.current_price * volume
+            portfolio_item.shares -= volume
+            current_user.cash_balance += sale_total
+
+            db.session.add(Transaction(
+                buyer_id=None,
+                seller_id=current_user.id,
+                stock_id=stock.id,
+                price=stock.current_price,
+                volume=volume,
+                status="Success"
+            ))
+
+            db.session.commit()
+            flash(f"Market sale of {volume} shares of {ticker} complete!", "success")
+            return redirect(url_for("routes.dashboard"))
+
+    return render_template("trade.html", stock=stock)
+
+@routes.route("/wallet", methods=["GET", "POST"])
+@login_required
+def wallet():
+
+    user = current_user
+    if request.method == "POST":
+        action = request.form.get("action")
+        amount = float(request.form.get("amount", 0))
+
+        if amount <= 0:
+            flash("Amount must be greater than 0", "error")
+            return redirect(url_for("routes.wallet"))
+
+        if action == "deposit":
+            current_user.cash_balance += amount
+            flash(f"Deposited ${amount:.2f}", "success")
+
+        elif action == "withdraw":
+            if current_user.cash_balance >= amount:
+                current_user.cash_balance -= amount
+                flash(f"Withdrew ${amount:.2f}", "success")
+            else:
+                flash("Insufficient funds for withdrawal", "error")
+
+        db.session.commit()
+        return redirect(url_for("routes.wallet"))
+
+    return render_template("wallet.html", user=current_user)
+
+@routes.route("/order/pending/<string:ticker>", methods=["GET", "POST"])
+@login_required
+def place_pending_order(ticker):
+    user = current_user
+    stock = Stock.query.filter_by(ticker=ticker).first_or_404()
+
+    if request.method == "POST":
+        order_type = request.form.get("order_type")
+        volume = int(request.form.get("volume"))
+        target_price = float(request.form.get("target_price"))
+
+        order = PendingOrder(
+            user_id=current_user.id,
+            stock_id=stock.id,
+            order_type=order_type,
+            volume=volume,
+            target_price=target_price
+        )
+        db.session.add(order)
+        db.session.commit()
+
+        flash(f"{order_type.title()} order placed for {stock.ticker} at ${target_price}", "success")
+        return redirect(url_for("routes.dashboard"))
+
+    return render_template("place_order.html", stock=stock)
+
+@routes.route("/order/cancel/<int:order_id>", methods=["POST"])
+@login_required
+def cancel_order(order_id):
+    user = current_user
+    order = PendingOrder.query.get_or_404(order_id)
+    if order.user_id != current_user.id:
+        abort(403)
+
+    order.is_active = False
+    db.session.commit()
+    flash("Order canceled successfully.", "info")
+    return redirect(url_for("routes.dashboard"))

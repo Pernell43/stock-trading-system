@@ -28,6 +28,9 @@
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.portfolio') }}">Portfolio</a></li>
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.market') }}">Market</a></li>
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.settings') }}">Settings</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.dashboard') }}">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.wallet') }}">Wallet</a></li>
+
                 
                         {% if current_user.isAdministrator %}
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('routes.admin') }}">Admin Panel</a></li>
@@ -76,7 +79,8 @@
 
     <!-- Bootstrap JS -->
     <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+    <!-- <script type="text/javascript" src="{{ url_for('static', filename='js/scripts.js') }}"></script> testing to see if this is conflicting --> 
+    
 
 </body>
 </html>
